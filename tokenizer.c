@@ -8,36 +8,54 @@
 #include <string.h>
 #include <stdlib.h>
 
+const int INITAL_TOKEN_CAPACITY = 64; // Inital capacity of token array within Tokens struct
+const char *TOKEN_DELIMITER = " ";    // Delimiter used to seperate token within input statement
+
 typedef struct {
 	char **tokens;
-	size_t tokenCount;
-	size_t size;
-	size_t capacity;
+	size_t count; 		// number of tokens
+	size_t capacity;	// available token slots
 } Tokens;
 
-#define pushToken(tokarr, token)\
-	if (tokarr.capacity == 0) tokarr.capacity = 64;\
-	while (tokarr.size <= (tokarr.capacity + strlen(token))) {\
-		tokarr.capacity *= 2;\
-		tokarr.tokens = realloc(tokarr.tokens, tokarr.capacity);\
-	}\
-	tokarr.tokens[tokarr.tokenCount++] = token;
 
+Tokens newTokenStruct() {
+	Tokens temp;
+	temp.tokens = malloc(INITAL_TOKEN_CAPACITY);
+	temp.capacity = INITAL_TOKEN_CAPACITY;
+	temp.count = 0;
 
-int tokenizeStatement(char *statement, char **tokensOut) {
-	Tokens tokarr = {};
-	char *delimiter = " ";
-	char *token;
+	return temp;
+}
 
-	token = strtok(statement, delimiter);
-	
-	printf("here");
-	while (token)
+void pushToken(Tokens *tokarr, char* token) {
+	if (tokarr->count + 1 >= tokarr->capacity) 
 	{
-		pushToken(tokarr, token);
-		token = strtok(NULL, delimiter);
+		tokarr->capacity *= 2;
+		tokarr->tokens = realloc(
+			tokarr->tokens, 
+			tokarr->capacity * sizeof *tokarr->tokens
+		);
 	}
 	
-	tokensOut = tokarr.tokens;
+	if (token) {
+		tokarr->tokens[tokarr->count++] = strdup(token);
+	} else {
+		tokarr->tokens[tokarr->count++] = NULL;
+	}
+}
+
+int tokenizeStatement(char *statement, char ***tokensOut) {
+	char *token;
+	Tokens tokarr = newTokenStruct();
+
+	token = strtok(statement, TOKEN_DELIMITER);
+	while (token)
+	{
+		pushToken(&tokarr, token);
+		token = strtok(NULL, TOKEN_DELIMITER);
+	}
+	pushToken(&tokarr, NULL); // push null terminator
+
+	*tokensOut = tokarr.tokens;
 	return 0;
 }
